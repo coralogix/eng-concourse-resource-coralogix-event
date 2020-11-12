@@ -1,0 +1,14 @@
+FROM alpine:3.12.1
+
+RUN apk --no-cache add bash jq curl perl-utils sed
+
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.name="coralogix-event-resource" \
+      org.label-schema.description="A Concourse resource for emiting events to Coralogix API." \
+      org.label-schema.vcs-url="https://github.com/coralogix/eng-concourse-resource-coralogix-event" \
+      org.label-schema.vendor="Coralogix, Inc." \
+      org.label-schema.version="v0.1.0"
+
+WORKDIR /opt/resource
+
+COPY src/*  /opt/resource/
