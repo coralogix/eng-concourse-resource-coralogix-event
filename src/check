@@ -1,2 +1,3 @@
-#!/bin/sh
-echo "[{\"hash\":\"none\"}]"
+#! /bin/sh
+
+echo '[{"hash":"none"}]'
