@@ -1,0 +1,73 @@
+jobs:
+- name: hello-world
+  plan:
+    - params:
+        build_status: "Started"
+        message: "Starting Build"
+        severity: "3"
+      put: pipeline-status
+    - config:
+        container_limits: {}
+        image_resource:
+          source:
+            password: ((dockerhub.password))
+            repository: alpine
+            username: ((dockerhub.username))
+          type: registry-image
+        platform: linux
+        run:
+          args:
+          - Hello, world!
+          path: echo
+      task: say-hello
+  on_success:
+    in_parallel:
+      steps:
+        - try:
+            params:
+              build_status: "Success"
+              message: Build Succeeded
+              severity: "3"
+            put: pipeline-status
+  on_abort:
+    in_parallel:
+      steps:
+        - try:
+            params:
+              build_status: "Aborted"
+              message: Build Aborted
+              severity: "4"
+            put: pipeline-status
+  on_failure:
+    in_parallel:
+      steps:
+        - try:
+            params:
+              build_status: "Failed"
+              message: Build Failed
+              severity: "5"
+            put: pipeline-status
+resource_types:
+- check_every: 24h
+  name: coralogix-event
+  source:
+    aws_access_key_id: ((controller.aws-access-key-id))
+    aws_region: ((controller.aws-region))
+    aws_secret_access_key: ((controller.aws-secret-access-key))
+    repository: concourse-coralogix-event
+    tag: v0.3.2
+  type: registry-image
+- check_every: 24h
+  name: registry-image
+  source:
+    password: ((dockerhub.password))
+    repository: concourse/registry-image-resource
+    tag: 0.14.0
+    username: ((dockerhub.username))
+  type: registry-image
+resources:
+- name: pipeline-status
+  source:
+    coralogix_host: https://api.dev-shared.coralogix.net/api/v1/logs
+    private_key: 6411e033-3439-d71c-542b-0d45419d6b30
+  type: coralogix-event
