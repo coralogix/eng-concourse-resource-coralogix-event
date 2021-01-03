@@ -1,4 +1,36 @@
 #! /usr/bin/env bash
+set -x
+fly_init() {
+  local fly='/usr/local/bin/fly'
+  local concourse_url="$1"
+  local concourse_username="$2"
+  local concourse_password="$3"
+  local concourse_team="$4"
+
+  # first time instalation
+  mkdir -p /usr/local/bin
+  if [[ ! -x ${fly} ]]; then
+    set +e
+    curl -fSsL "${concourse_url}/api/v1/cli?arch=amd64&platform=linux" -o ${fly}
+    if [[ "$?" -ne 0 ]]; then
+      set -e
+      echo "[ERROR] Unable to download fly." 1>&2
+      exit 1
+    fi
+    set -e
+    chmod +x ${fly}
+  fi
+
+  # login - create temporary token
+  set +e
+  ${fly} -t local login -c "$concourse_url" -u "$concourse_username" -p "$concourse_password" -n "$concourse_team" 2>&1
+  if [[ "$?" -ne 0 ]]; then
+    set -e
+    echo "[ERROR] fly login failed." 1>&2
+    exit 1
+  fi
+  set -e
+}
 
 set -euo pipefail
 
@@ -12,11 +44,52 @@ message=$(            echo "${input_json}" | jq    '.params.message? // ""'  )
 
 ## source
 private_key=$(        echo "${input_json}" | jq    '.source.private_key'                                               )
-coralogix_host=$(     echo "${input_json}" | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
+coralogix_host=$(     echo "${input_json}"   | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
 subsystem_name=$(     echo "${input_json}" | jq    ".source.subsystem_name? // \"$BUILD_PIPELINE_NAME\""                   )
 application_name=$(   echo "${input_json}" | jq    '.source.application_name? // "concourse"'                          )
+concourse_username=$( echo "${input_json}" | jq -r '.source.concourse_username' )
+concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password' )
+concourse_url=$(      echo "${input_json}" | jq -r '.source.concourse_url? // empty')
 
-timestamp=$(date +%s000)
+
+if [[ "$concourse_url" == 'null' ]]; then
+  if [[ -z "$ATC_EXTERNAL_URL" ]]; then
+    echo '[ERROR] No concourse_url was provided in the source, and the ATC_EXTERNAL_URL environment variable is not set! Unsure how to connect to the Concourse API.'
+    exit 1
+  fi
+  concourse_url="$ATC_EXTERNAL_URL"
+fi
+
+# validation - the following must be defined
+if [[ "$private_key" == 'null' ]]; then
+  echo '[ERROR] private_key was not defined! Please define private_key so that this resource can authenticate with the Coralogix API.' 1>&2
+  exit 1
+fi
+
+if [[ "$application_name" == 'null' ]]; then
+  echo '[ERROR] application_name was not defined! Please define application_name so that Coralogix will be able to categorize the logs to be sent.' 1>&2
+  exit 1
+fi
+
+if [[ "$subsystem_name" == 'null' ]]; then
+  echo '[ERROR] subsystem_name was not defined! Please define subsystem_name so that Coralogix will be able to categorize the logs to be sent.' 1>&2
+  exit 1
+fi
+
+if [[ "$concourse_username" == 'null' ]]; then
+  echo '[ERROR] concourse_username was not defined! Cannot connect to the Concourse API without a username.' 1>&2
+  exit 1
+fi
+
+if [[ "$concourse_password" == 'null' ]]; then
+  echo '[ERROR] concourse_password was not defined! Cannot connect to the Concourse API without a password.' 1>&2
+  exit 1
+fi
+
+fly_init ${concourse_url} ${concourse_username} ${concourse_password} $BUILD_TEAM_NAME
+start_time=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME" | jq -c '.next_build.start_time')
+timestamp=$(date +%s)
+duration=$((timestamp-start_time))
 
 body=$(jq -c \
   <<EOF
@@ -27,12 +100,13 @@ body=$(jq -c \
   "logEntries":
     [
        {
-          "timestamp": $timestamp,
+          "timestamp": "${timestamp}000",
           "severity": "$severity",
           "text": {
             "build_status": $build_status,
             "job_name": "$BUILD_JOB_NAME",
-            "message": $message
+            "message": $message,
+            "duration": $duration
           }
         }
 
