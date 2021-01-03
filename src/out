@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -euxo pipefail
+set -euo pipefail
 
 input_json="$(cat)"
 
@@ -17,24 +17,20 @@ application_name=$(   echo "${input_json}" | jq    '.source.application_name? //
 timestamp=$(date +%s000)
 
 body=$(jq -c \
-  --argjson private_key           "$private_key" \
-  --argjson application_name      "$application_name" \
-  --argjson subsystem_name        "$subsystem_name" \
-  --argjson timestamp             "\"$timestamp\"" \
-  --argjson severity              "\"$severity\"" \
-  --argjson build_status          "$build_status" \
   <<EOF
 {
-  "privateKey": "$private_key",
-  "applicationName": "$application_name",
-  "subsystemName": "$subsystem_name",
+  "privateKey": $private_key,
+  "applicationName": $application_name,
+  "subsystemName": $subsystem_name,
   "logEntries":
     [
        {
-          "timestamp": "$timestamp",
+          "timestamp": $timestamp,
           "severity": "$severity",
-          "build_status": "$build_status",
-          "job_name": "$BUILD_JOB_NAME"
+          "text": {
+            "build_status": $build_status,
+            "job_name": "$BUILD_JOB_NAME"
+          }
         }
 
     ]
@@ -44,6 +40,8 @@ EOF
 
 ## retry mechanism
 ## currently hardcoded to 5
+
+http_status_code=
 for i in $(seq 1 5); do
   http_status_code=$(curl \
     -XPOST \
@@ -51,7 +49,6 @@ for i in $(seq 1 5); do
     --data "${body}" \
     --silent \
     --output /dev/null \
-    --head \
     --write-out "%{http_code}" \
     "${coralogix_host}")
 
@@ -62,4 +59,7 @@ done
 
 if [[ $http_status_code -ne 200 ]]; then
   echo "[ERROR][HTTP status code: $http_status_code] The Coralogix API declined the logs!" 1>&2
+  echo '{"version":{"hash":"none"},"metadata":[]}'
+else
+  echo '{"version":{"hash":"none"},"metadata":[]}'
 fi
