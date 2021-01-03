@@ -1,0 +1,38 @@
+resource_types:
+  - check_every: 24h
+    name: registry-image
+    source:
+      password: ((dockerhub.password))
+      repository: concourse/registry-image-resource
+      tag: 0.14.0
+      username: ((dockerhub.username))
+    type: registry-image
+  - check_every: 24h
+    name: coralogix-resource
+    source:
+      password: ((dockerhub.password))
+      repository: concourse/registry-image-resource
+      tag: 0.14.0
+      username: ((dockerhub.username))
+    type: registry-image
+resources:
+  - name: coralogix
+
+
+jobs:
+- name: hello-world
+  plan:
+  - config:
+      container_limits: {}
+      image_resource:
+        source:
+          password: ((dockerhub.password))
+          repository: alpine
+          username: ((dockerhub.username))
+        type: registry-image
+      platform: linux
+      run:
+        args:
+        - Hello, world!
+        path: echo
+    task: say-hello
