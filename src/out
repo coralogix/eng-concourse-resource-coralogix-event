@@ -5,22 +5,20 @@ set -euo pipefail
 input_json="$(cat)"
 
 # parse out the input params
-## required
-private_key=$(        echo "${input_json}" | jq    '.source.private_key'     )
-build_status=$(       echo "${input_json}" | jq    '.source.build_status'    )
+## params
+build_status=$(       echo "${input_json}" | jq    '.params.build_status'    )
+severity=$(           echo "${input_json}" | jq -r '.params.severity? // 3'                             )
 
-# optional
+## source
+private_key=$(        echo "${input_json}" | jq    '.source.private_key'     )
 coralogix_host=$(     echo "${input_json}" | jq -r '.source.coralogix_host? // "api.coralogix.com"'     )
 subsystem_name=$(     echo "${input_json}" | jq    '.source.subsystem_name? // ${BUILD_PIPELINE_NAME}'  )
 application_name=$(   echo "${input_json}" | jq    '.source.application_name? // "concourse"'           )
-computer_name=$(      echo "${input_json}" | jq    '.source.computer_name? // empty'                    )
-severity=$(           echo "${input_json}" | jq -r '.source.severity? // 3'                             )
 
 body=$(jq -c \
   --argjson private_key           "$private_key" \
   --argjson application_name      "$application_name" \
   --argjson subsystem_name        "$subsystem_name" \
-  --argjson computer_name         "$computer_name" \
   --arg     timestamp             "$(date +%s000)" \
   --argjson severity              "$severity" \
   --arg     build_status          "$build_status" \
@@ -29,7 +27,6 @@ body=$(jq -c \
   "privateKey": \$private_key,
   "applicationName": \$application_name,
   "subsystemName": \$subsystem_name,
-  "computerName": \$computer_name,
   "logEntries":
     [
       ( {
