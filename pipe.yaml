@@ -55,15 +55,15 @@ resource_types:
     aws_region: ((controller.aws-region))
     aws_secret_access_key: ((controller.aws-secret-access-key))
     repository: concourse-coralogix-event
-    tag: v0.3.2
+    tag: v0.3.3
   type: registry-image
 - check_every: 24h
   name: registry-image
   source:
     password: ((dockerhub.password))
     repository: concourse/registry-image-resource
-    tag: 0.14.0
     username: ((dockerhub.username))
+    tag: 0.14.0
   type: registry-image
 resources:
 - name: pipeline-status
