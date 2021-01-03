@@ -1,11 +1,6 @@
 jobs:
 - name: hello-world
   plan:
-    - params:
-        build_status: "Started"
-        message: "Starting Build"
-        severity: "3"
-      put: pipeline-status
     - config:
         container_limits: {}
         image_resource:
@@ -55,7 +50,7 @@ resource_types:
     aws_region: ((controller.aws-region))
     aws_secret_access_key: ((controller.aws-secret-access-key))
     repository: concourse-coralogix-event
-    tag: v0.3.3
+    tag: v0.4.0
   type: registry-image
 - check_every: 24h
   name: registry-image
@@ -70,4 +65,6 @@ resources:
   source:
     coralogix_host: https://api.dev-shared.coralogix.net/api/v1/logs
     private_key: 6411e033-3439-d71c-542b-0d45419d6b30
+    concourse_username: ((concourse-local-user.username))
+    concourse_password: ((concourse-local-user.password))
   type: coralogix-event
