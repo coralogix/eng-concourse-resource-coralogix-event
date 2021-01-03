@@ -1,24 +1,3 @@
-resource_types:
-  - check_every: 24h
-    name: registry-image
-    source:
-      password: ((dockerhub.password))
-      repository: concourse/registry-image-resource
-      tag: 0.14.0
-      username: ((dockerhub.username))
-    type: registry-image
-  - check_every: 24h
-    name: coralogix-resource
-    source:
-      password: ((dockerhub.password))
-      repository: concourse/registry-image-resource
-      tag: 0.14.0
-      username: ((dockerhub.username))
-    type: registry-image
-resources:
-  - name: coralogix
-
-
 jobs:
 - name: hello-world
   plan:
@@ -36,3 +15,31 @@ jobs:
         - Hello, world!
         path: echo
     task: say-hello
+  - params:
+      build_status: Success we made it to Coralogix
+      severity: "2"
+    put: pipeline-status
+resource_types:
+- check_every: 24h
+  name: coralogix-event
+  source:
+    aws_access_key_id: ((controller.aws-access-key-id))
+    aws_region: ((controller.aws-region))
+    aws_secret_access_key: ((controller.aws-secret-access-key))
+    repository: concourse-coralogix-event
+    tag: v0.2.0
+  type: registry-image
+- check_every: 24h
+  name: registry-image
+  source:
+    password: ((dockerhub.password))
+    repository: concourse/registry-image-resource
+    tag: 0.14.0
+    username: ((dockerhub.username))
+  type: registry-image
+resources:
+- name: pipeline-status
+  source:
+    coralogix_host: https://api.app.staging.coralogix.net/api/v1/logs
+    private_key: ((dev-shared.fluentd-private-key))
+  type: coralogix-event
