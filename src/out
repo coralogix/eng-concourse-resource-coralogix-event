@@ -36,9 +36,9 @@ body=$(jq -c \
           "timestamp": \$timestamp,
           "duration": \$duration_json,
           "severity": \$severity,
-          "text": "Build $BUILD_JOB_NAME for pipeline $BUILD_PIPELINE_NAME took duration \$duration_text and finished with status \$finished_build_status"
+          "build_status": \$build_status,
+          "job_name": $BUILD_JOB_NAME
         }
-      * \$job_metadata
       )
     ]
 }
