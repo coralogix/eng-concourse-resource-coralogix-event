@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-set -x
+
 fly_init() {
   local fly='/usr/local/bin/fly'
   local concourse_url="$1"
