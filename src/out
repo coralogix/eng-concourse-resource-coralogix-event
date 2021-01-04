@@ -36,12 +36,6 @@ set -euo pipefail
 
 input_json="$(cat)"
 
-# parse out the input params
-## params
-build_status=$(       echo "${input_json}" | jq -r '.params.build_status'                                                                             )
-severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
-message=$(            echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME\"")
-
 ## source
 private_key=$(        echo "${input_json}" | jq    '.source.private_key'                                               )
 coralogix_host=$(     echo "${input_json}" | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
@@ -49,30 +43,26 @@ subsystem_name=$(     echo "${input_json}" | jq    ".source.subsystem_name? // \
 application_name=$(   echo "${input_json}" | jq    '.source.application_name? // "concourse"'                          )
 concourse_username=$( echo "${input_json}" | jq -r '.source.concourse_username'                                        )
 concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password'                                        )
-concourse_url=$(      echo "${input_json}" | jq -r '.source.concourse_url? // empty'                                   )
+concourse_url=$(      echo "${input_json}" | jq -r ".source.concourse_url? // \"$ATC_EXTERNAL_URL\""                   )
 
-
-if [[ "$concourse_url" == '' ]]; then
-  if [[ -z "$ATC_EXTERNAL_URL" ]]; then
-    echo '[ERROR] No concourse_url was provided in the source, and the ATC_EXTERNAL_URL environment variable is not set! Unsure how to connect to the Concourse API.'
-    exit 1
-  fi
-  concourse_url="$ATC_EXTERNAL_URL"
+fly_init ${concourse_url} ${concourse_username} ${concourse_password} $BUILD_TEAM_NAME
+start_time=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME" | jq -c '.next_build.start_time')
+timestamp=$(date +%s)
+if [[ -n $start_time ]]; then
+  duration=$((timestamp-start_time))
+else
+  duration="-1"
 fi
+
+## params
+build_status=$(       echo "${input_json}" | jq -r '.params.build_status'                                                                             )
+severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
+message=$(            echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME took $duration\"")
+
 
 # validation - the following must be defined
 if [[ "$private_key" == '' ]]; then
   echo '[ERROR] private_key was not defined! Please define private_key so that this resource can authenticate with the Coralogix API.' 1>&2
-  exit 1
-fi
-
-if [[ "$application_name" == '' ]]; then
-  echo '[ERROR] application_name was not defined! Please define application_name so that Coralogix will be able to categorize the logs to be sent.' 1>&2
-  exit 1
-fi
-
-if [[ "$subsystem_name" == '' ]]; then
-  echo '[ERROR] subsystem_name was not defined! Please define subsystem_name so that Coralogix will be able to categorize the logs to be sent.' 1>&2
   exit 1
 fi
 
@@ -86,10 +76,6 @@ if [[ "$concourse_password" == '' ]]; then
   exit 1
 fi
 
-fly_init ${concourse_url} ${concourse_username} ${concourse_password} $BUILD_TEAM_NAME
-start_time=$(fly -t local curl --silent "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME" | jq -c '.next_build.start_time')
-timestamp=$(date +%s)
-duration=$((timestamp-start_time))
 
 body=$(jq -c \
   <<EOF
