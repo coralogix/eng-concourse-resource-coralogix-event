@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-set -x
+
 fly_init() {
   local fly='/usr/local/bin/fly'
   local concourse_url="$1"
@@ -23,7 +23,7 @@ fly_init() {
 
   # login - create temporary token
   set +e
-  ${fly} -t local login -c "$concourse_url" -u "$concourse_username" -p "$concourse_password" -n "$concourse_team" 2>&1
+  ${fly} -t local login -c "$concourse_url" -u "$concourse_username" -p "$concourse_password" -n "$concourse_team" > /dev/null 2>&1
   if [[ "$?" -ne 0 ]]; then
     set -e
     echo "[ERROR] fly login failed." 1>&2
@@ -38,9 +38,9 @@ input_json="$(cat)"
 
 # parse out the input params
 ## params
-build_status=$(       echo "${input_json}" | jq    '.params.build_status'    )
+build_status=$(       echo "${input_json}" | jq -r   '.params.build_status'    )
 severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"')
-message=$(            echo "${input_json}" | jq    '.params.message? // ""'  )
+message=$(            echo "${input_json}" | jq -r  ".params.message? // \"$build_status during $BUILD_JOB_NAME in $BUILD_PIPELINE_NAME\""  )
 
 ## source
 private_key=$(        echo "${input_json}" | jq    '.source.private_key'                                               )
@@ -52,7 +52,7 @@ concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password' 
 concourse_url=$(      echo "${input_json}" | jq -r '.source.concourse_url? // empty')
 
 
-if [[ "$concourse_url" == 'null' ]]; then
+if [[ "$concourse_url" == '' ]]; then
   if [[ -z "$ATC_EXTERNAL_URL" ]]; then
     echo '[ERROR] No concourse_url was provided in the source, and the ATC_EXTERNAL_URL environment variable is not set! Unsure how to connect to the Concourse API.'
     exit 1
@@ -61,27 +61,27 @@ if [[ "$concourse_url" == 'null' ]]; then
 fi
 
 # validation - the following must be defined
-if [[ "$private_key" == 'null' ]]; then
+if [[ "$private_key" == '' ]]; then
   echo '[ERROR] private_key was not defined! Please define private_key so that this resource can authenticate with the Coralogix API.' 1>&2
   exit 1
 fi
 
-if [[ "$application_name" == 'null' ]]; then
+if [[ "$application_name" == '' ]]; then
   echo '[ERROR] application_name was not defined! Please define application_name so that Coralogix will be able to categorize the logs to be sent.' 1>&2
   exit 1
 fi
 
-if [[ "$subsystem_name" == 'null' ]]; then
+if [[ "$subsystem_name" == '' ]]; then
   echo '[ERROR] subsystem_name was not defined! Please define subsystem_name so that Coralogix will be able to categorize the logs to be sent.' 1>&2
   exit 1
 fi
 
-if [[ "$concourse_username" == 'null' ]]; then
+if [[ "$concourse_username" == '' ]]; then
   echo '[ERROR] concourse_username was not defined! Cannot connect to the Concourse API without a username.' 1>&2
   exit 1
 fi
 
-if [[ "$concourse_password" == 'null' ]]; then
+if [[ "$concourse_password" == '' ]]; then
   echo '[ERROR] concourse_password was not defined! Cannot connect to the Concourse API without a password.' 1>&2
   exit 1
 fi
@@ -103,10 +103,10 @@ body=$(jq -c \
           "timestamp": "${timestamp}000",
           "severity": "$severity",
           "text": {
-            "build_status": $build_status,
+            "build_status": "$build_status",
             "job_name": "$BUILD_JOB_NAME",
-            "message": $message,
-            "duration": $duration
+            "message": "$message",
+            "duration_seconds": $duration
           }
         }
 
