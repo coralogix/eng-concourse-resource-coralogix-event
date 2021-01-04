@@ -38,18 +38,18 @@ input_json="$(cat)"
 
 # parse out the input params
 ## params
-build_status=$(       echo "${input_json}" | jq -r   '.params.build_status'    )
-severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"')
-message=$(            echo "${input_json}" | jq -r  ".params.message? // \"$build_status during $BUILD_JOB_NAME in $BUILD_PIPELINE_NAME\""  )
+build_status=$(       echo "${input_json}" | jq -r '.params.build_status'                                                                             )
+severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
+message=$(            echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME\"")
 
 ## source
 private_key=$(        echo "${input_json}" | jq    '.source.private_key'                                               )
-coralogix_host=$(     echo "${input_json}"   | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
-subsystem_name=$(     echo "${input_json}" | jq    ".source.subsystem_name? // \"$BUILD_PIPELINE_NAME\""                   )
+coralogix_host=$(     echo "${input_json}" | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
+subsystem_name=$(     echo "${input_json}" | jq    ".source.subsystem_name? // \"$BUILD_PIPELINE_NAME\""               )
 application_name=$(   echo "${input_json}" | jq    '.source.application_name? // "concourse"'                          )
-concourse_username=$( echo "${input_json}" | jq -r '.source.concourse_username' )
-concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password' )
-concourse_url=$(      echo "${input_json}" | jq -r '.source.concourse_url? // empty')
+concourse_username=$( echo "${input_json}" | jq -r '.source.concourse_username'                                        )
+concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password'                                        )
+concourse_url=$(      echo "${input_json}" | jq -r '.source.concourse_url? // empty'                                   )
 
 
 if [[ "$concourse_url" == '' ]]; then
@@ -87,7 +87,7 @@ if [[ "$concourse_password" == '' ]]; then
 fi
 
 fly_init ${concourse_url} ${concourse_username} ${concourse_password} $BUILD_TEAM_NAME
-start_time=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME" | jq -c '.next_build.start_time')
+start_time=$(fly -t local curl --silent "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME" | jq -c '.next_build.start_time')
 timestamp=$(date +%s)
 duration=$((timestamp-start_time))
 
@@ -103,7 +103,7 @@ body=$(jq -c \
           "timestamp": "${timestamp}000",
           "severity": "$severity",
           "text": {
-            "build_url": "https://concourse.coralogix.net/builds/$BUILD_ID",
+            "build_url": "$concourse_url/builds/$BUILD_ID",
             "build_status": "$build_status",
             "job_name": "$BUILD_JOB_NAME",
             "message": "$message",
