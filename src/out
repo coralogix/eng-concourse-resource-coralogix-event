@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-
+set -x
 fly_init() {
   local fly='/usr/local/bin/fly'
   local concourse_url="$1"
@@ -103,6 +103,7 @@ body=$(jq -c \
           "timestamp": "${timestamp}000",
           "severity": "$severity",
           "text": {
+            "build_url": "https://concourse.coralogix.net/builds/$BUILD_ID",
             "build_status": "$build_status",
             "job_name": "$BUILD_JOB_NAME",
             "message": "$message",

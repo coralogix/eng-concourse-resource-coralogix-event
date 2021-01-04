@@ -63,7 +63,7 @@ resources:
 - name: pipeline-status
   source:
     coralogix_host: https://api.app.staging.coralogix.net/api/v1/logs
-    private_key: ((staging.fluentd-private-key))
+    private_key: ((staging.fluentd-private-key))k
     concourse_username: ((concourse-local-user.username))
     concourse_password: ((concourse-local-user.password))
   type: coralogix-event
