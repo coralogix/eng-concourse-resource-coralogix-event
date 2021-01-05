@@ -58,7 +58,7 @@ fi
 build_status=$(       echo "${input_json}" | jq -r '.params.build_status'                                                                             )
 severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
 message=$(            echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME took $duration\"")
-
+labels=$(             echo "${input_json}" | jq    '.params.labels? // {}'                                                                            )
 
 # validation - the following must be defined
 if [[ "$private_key" == '' ]]; then
@@ -93,10 +93,10 @@ body=$(jq -c \
             "build_status": "$build_status",
             "job_name": "$BUILD_JOB_NAME",
             "message": "$message",
-            "duration_seconds": $duration
+            "duration_seconds": $duration,
+            "labels": $labels
           }
         }
-
     ]
 }
 EOF
