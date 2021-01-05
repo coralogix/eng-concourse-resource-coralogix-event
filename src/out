@@ -23,7 +23,7 @@ fly_init() {
 
   # login - create temporary token
   set +e
-  ${fly} -t local login -c "$concourse_url" -u "$concourse_username" -p "$concourse_password" -n "$concourse_team" 2>&1
+  ${fly} -t local login -c "$concourse_url" -u "$concourse_username" -p "$concourse_password" -n "$concourse_team" > /dev/null 2>&1
   if [[ "$?" -ne 0 ]]; then
     set -e
     echo "[ERROR] fly login failed." 1>&2
@@ -36,107 +36,68 @@ set -euo pipefail
 
 input_json="$(cat)"
 
-# parse out the input params
-## required
-private_key=$(        echo "${input_json}" | jq    '.source.private_key'     )
-application_name=$(   echo "${input_json}" | jq    '.source.application_name')
-subsystem_name=$(     echo "${input_json}" | jq    '.source.subsystem_name'  )
-
-concourse_username=$( echo "${input_json}" | jq -r '.source.concourse_username' )
-concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password' )
-
-# optional
-coralogix_host=$(     echo "${input_json}" | jq -r '.source.coralogix_host? // "api.coralogix.com"' )
-computer_name=$(      echo "${input_json}" | jq    '.source.computer_name? // empty'                )
-concourse_url=$(      echo "${input_json}" | jq -r '.source.concourse_url? // empty')
-
-if [[ "$concourse_url" == 'null' ]]; then
-  if [[ -z "$ATC_EXTERNAL_URL" ]]; then
-    echo '[ERROR] No concourse_url was provided in the source, and the ATC_EXTERNAL_URL environment variable is not set! Unsure how to connect to the Concourse API.'
-    exit 1
-  fi
-  concourse_url="$ATC_EXTERNAL_URL"
-fi
+## source
+private_key=$(        echo "${input_json}" | jq    '.source.private_key'                                               )
+coralogix_host=$(     echo "${input_json}" | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
+subsystem_name=$(     echo "${input_json}" | jq    ".source.subsystem_name? // \"$BUILD_PIPELINE_NAME\""               )
+application_name=$(   echo "${input_json}" | jq    '.source.application_name? // "concourse"'                          )
+concourse_username=$( echo "${input_json}" | jq -r '.source.concourse_username? // empty'                              )
+concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password? // empty'                              )
+concourse_url=$(      echo "${input_json}" | jq -r ".source.concourse_url? // \"$ATC_EXTERNAL_URL\""                   )
 
 # validation - the following must be defined
-if [[ "$private_key" == 'null' ]]; then
+if [[ "$private_key" == '' ]]; then
   echo '[ERROR] private_key was not defined! Please define private_key so that this resource can authenticate with the Coralogix API.' 1>&2
   exit 1
 fi
 
-if [[ "$application_name" == 'null' ]]; then
-  echo '[ERROR] application_name was not defined! Please define application_name so that Coralogix will be able to categorize the logs to be sent.' 1>&2
-  exit 1
-fi
-
-if [[ "$subsystem_name" == 'null' ]]; then
-  echo '[ERROR] subsystem_name was not defined! Please define subsystem_name so that Coralogix will be able to categorize the logs to be sent.' 1>&2
-  exit 1
-fi
-
-if [[ "$concourse_username" == 'null' ]]; then
+if [[ "$concourse_username" == '' ]]; then
   echo '[ERROR] concourse_username was not defined! Cannot connect to the Concourse API without a username.' 1>&2
   exit 1
 fi
 
-if [[ "$concourse_password" == 'null' ]]; then
+if [[ "$concourse_password" == '' ]]; then
   echo '[ERROR] concourse_password was not defined! Cannot connect to the Concourse API without a password.' 1>&2
   exit 1
 fi
 
+
 fly_init ${concourse_url} ${concourse_username} ${concourse_password} $BUILD_TEAM_NAME
-
-## execute
-set +e
-job_metadata=$(fly curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME" | jq -c '.finished_build')
-if [[ "$?" -ne 0 ]]; then
-  set -e
-  echo "[ERROR] Unable to fetch the job status." 1>&2
-  exit 1
-fi
-set -e
-
-## logs enrichment
-start_time=$(jq -r '.start_time' <<< "$job_metadata")
-end_time=$(jq -r '.end_time' <<< "$job_metadata")
-timestamp="${start_time}000"
-
-finished_build_status=$(jq -r '.status' <<< "$job_metadata")
-severity=3 # info
-if [[ ${finished_build_status} != 'succeeded' ]]; then
-  severity=5 # error
+start_time=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME" | jq -c '.next_build.start_time')
+timestamp=$(date +%s)
+if [[ -n $start_time ]]; then
+  duration=$((timestamp-start_time))
+else
+  duration="-1"
 fi
 
-# how long it took the build to finish
-duration=$((end_time-start_time))
+## params
+build_status=$(       echo "${input_json}" | jq -r '.params.build_status'                                                                             )
+severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
+message=$(            echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME took $duration\"")
+labels=$(             echo "${input_json}" | jq    '.params.labels? // {}'                                                                            )
+
 
 body=$(jq -c \
-  --argjson private_key           "$private_key" \
-  --argjson application_name      "$application_name" \
-  --argjson subsystem_name        "$subsystem_name" \
-  --argjson computer_name         "$computer_name" \
-  --arg     timestamp             "$timestamp" \
-  --argjson duration_json         "$duration" \ # used to preserve the number in the JSON as a number
-  --arg     duration_text         "$duration" \ # used to allow the number to be injected in a string
-  --argjson severity              "$severity" \
-  --arg     finished_build_status "$finished_build_status" \
-  --argjson job_metadata          "$job_metadata" \
   <<EOF
 {
-  "privateKey": \$private_key,
-  "applicationName": \$application_name,
-  "subsystemName": \$subsystem_name,
-  "computerName": \$computer_name,
+  "privateKey": $private_key,
+  "applicationName": $application_name,
+  "subsystemName": $subsystem_name,
   "logEntries":
     [
-      ( {
-          "timestamp": \$timestamp,
-          "duration": \$duration_json,
-          "severity": \$severity,
-          "text": "Build $BUILD_JOB_NAME for pipeline $BUILD_PIPELINE_NAME took duration \$duration_text and finished with status \$finished_build_status"
+       {
+          "timestamp": "${timestamp}000",
+          "severity": "$severity",
+          "text": {
+            "build_url": "$concourse_url/builds/$BUILD_ID",
+            "build_status": "$build_status",
+            "job_name": "$BUILD_JOB_NAME",
+            "message": "$message",
+            "duration_seconds": $duration,
+            "labels": $labels
+          }
         }
-      * \$job_metadata
-      )
     ]
 }
 EOF
@@ -144,6 +105,8 @@ EOF
 
 ## retry mechanism
 ## currently hardcoded to 5
+
+http_status_code=
 for i in $(seq 1 5); do
   http_status_code=$(curl \
     -XPOST \
@@ -151,9 +114,8 @@ for i in $(seq 1 5); do
     --data "${body}" \
     --silent \
     --output /dev/null \
-    --head \
     --write-out "%{http_code}" \
-    "https://${coralogix_host}/api/v1/logs")
+    "${coralogix_host}")
 
   if [[ $http_status_code -eq 200 ]]; then
     break
@@ -162,5 +124,7 @@ done
 
 if [[ $http_status_code -ne 200 ]]; then
   echo "[ERROR][HTTP status code: $http_status_code] The Coralogix API declined the logs!" 1>&2
-  exit 1
+  echo '{"version":{"hash":"none"},"metadata":[]}'
+else
+  echo '{"version":{"hash":"none"},"metadata":[]}'
 fi
