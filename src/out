@@ -67,6 +67,7 @@ start_time=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_
 timestamp=$(date +%s)
 if [[ -n $start_time ]]; then
   duration=$((timestamp-start_time))
+  timestamp=${start_time}
 else
   duration="-1"
 fi
@@ -95,7 +96,8 @@ body=$(jq -c \
             "job_name": "$BUILD_JOB_NAME",
             "message": "$message",
             "duration_seconds": $duration,
-            "labels": $labels
+            "labels": $labels,
+            "team": "$BUILD_TEAM_NAME"
           }
         }
     ]
