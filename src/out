@@ -76,14 +76,12 @@ build_status=$(       echo "${input_json}" | jq -r '.params.build_status'       
 severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
 message=$(            echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME took $duration\"")
 labels=$(             echo "${input_json}" | jq    '.params.labels? // {}'                                                                            )
-commit_id_file=$(     echo "${input_json}" | jq    ".params.commit_id_file? // empty"                                   )
+commit_id_file=$(     echo "${input_json}" | jq -r '.params.commit_id_file? // empty'                                   )
 
 commit_id=""
-if [[ -e ${commit_id_file} ]]; then
-  commit_id=$(cat ${commit_id_file})
+if [[ ! -z "${commit_id_file}" ]]; then
+  commit_id=$(cat "/tmp/build/put/${commit_id_file}")
 fi
-
-
 
 body=$(jq -c \
   <<EOF
