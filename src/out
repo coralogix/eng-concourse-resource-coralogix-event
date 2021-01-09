@@ -79,7 +79,7 @@ labels=$(             echo "${input_json}" | jq    '.params.labels? // {}'      
 commit_id_file=$(     echo "${input_json}" | jq    ".params.commit_id_file? // empty"                                   )
 
 commit_id=""
-if [[ -e "${commit_id_file}" ]]; then
+if [[ -e ${commit_id_file} ]]; then
   commit_id=$(cat ${commit_id_file})
 fi
 
