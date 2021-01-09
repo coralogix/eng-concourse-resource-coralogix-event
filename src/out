@@ -44,8 +44,9 @@ application_name=$(   echo "${input_json}" | jq    '.source.application_name? //
 concourse_username=$( echo "${input_json}" | jq -r '.source.concourse_username? // empty'                              )
 concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password? // empty'                              )
 concourse_url=$(      echo "${input_json}" | jq -r ".source.concourse_url? // \"$ATC_EXTERNAL_URL\""                   )
-commit_id_file=$(      echo "${input_json}" | jq    ".source.unique_id_file // empty"                                  )
+commit_id_file=$(     echo "${input_json}" | jq    ".source.commit_id_file? // empty"                                   )
 
+commit_id=""
 if [[ -e "${commit_id_file}" ]]; then
   commit_id=$(cat ${commit_id_file})
 fi
