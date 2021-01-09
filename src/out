@@ -44,13 +44,6 @@ application_name=$(   echo "${input_json}" | jq    '.source.application_name? //
 concourse_username=$( echo "${input_json}" | jq -r '.source.concourse_username? // empty'                              )
 concourse_password=$( echo "${input_json}" | jq -r '.source.concourse_password? // empty'                              )
 concourse_url=$(      echo "${input_json}" | jq -r ".source.concourse_url? // \"$ATC_EXTERNAL_URL\""                   )
-commit_id_file=$(     echo "${input_json}" | jq    ".source.commit_id_file? // empty"                                   )
-
-commit_id=""
-if [[ -e "${commit_id_file}" ]]; then
-  commit_id=$(cat ${commit_id_file})
-fi
-
 # validation - the following must be defined
 if [[ "$private_key" == '' ]]; then
   echo '[ERROR] private_key was not defined! Please define private_key so that this resource can authenticate with the Coralogix API.' 1>&2
@@ -83,6 +76,13 @@ build_status=$(       echo "${input_json}" | jq -r '.params.build_status'       
 severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
 message=$(            echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME took $duration\"")
 labels=$(             echo "${input_json}" | jq    '.params.labels? // {}'                                                                            )
+commit_id_file=$(     echo "${input_json}" | jq    ".params.commit_id_file? // empty"                                   )
+
+commit_id=""
+if [[ -e "${commit_id_file}" ]]; then
+  commit_id=$(cat ${commit_id_file})
+fi
+
 
 
 body=$(jq -c \
