@@ -46,7 +46,11 @@ resources:
 Emit event to Coralogix API containing the pipeline jobs metadata
 
 #### Params
-* 
+* `build_status` - Required. The status of the build. (succeed/failed/aborted)
+* `severity` - Optional. Coralogix severity represented by a number as described in the [Coralogix Rest API](https://coralogix.com/integrations/coralogix-rest-api/)
+* `message` - 
+* `labels` -
+* `additional_details_file` -
 
 ## Maintainers
 [Ari Becker](https://github.com/ari-becker)
