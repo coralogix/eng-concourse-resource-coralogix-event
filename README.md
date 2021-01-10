@@ -4,7 +4,7 @@
 A resource type for Concourse CI which emits events to [Coralogix](https://coralogix.com/).
 
 ## Source Configuration
-* `private_key`                : _Required_ (`string`). The private key to use when sending logs to Coralogix. private_key is provided by creating new Coralogix account or using the UI Send your logs` tab under settings for an existing account
+* `private_key`                : _Required_ (`string`). The private key to use when sending logs to Coralogix. private_key is provided by creating new Coralogix account or using the UI Send your logs tab under settings for an existing account
 * `concourse_username`         : _Required_ (`string`). The Concourse username used to login to concourse.
 * `concourse_password`         : _Required_ (`string`). The Concourse password used to login to concourse.
 * `application_name`           : _Optional_ (`string`). The application name to use when sending logs to Coralogix. defaults to "concourse".
