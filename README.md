@@ -46,11 +46,33 @@ resources:
 Emit event to Coralogix API containing the pipeline jobs metadata
 
 #### Params
-* `build_status` - _Required_. The status of the build. (succeed/failed/aborted)
-* `severity` - _Optional_. Coralogix severity represented by a number as described in the [Coralogix Rest API](https://coralogix.com/integrations/coralogix-rest-api/)
-* `message` - 
-* `labels` -
-* `additional_details_file` -
+* `build_status`            : _Required_. The status of the build. (succeed/failed/aborted)
+* `severity`                : _Optional_. Coralogix severity represented by a number as described in the [Coralogix Rest API](https://coralogix.com/integrations/coralogix-rest-api/)
+* `message`                 : _Optional_. The message we want to send.
+* `labels`                  : _Optional_. Additional labels to add to the log.
+* `additional_details_file` : _Optional_. The path to a json file containing additional details to be injected to the log. (The file must be a valid json).
+
+### Example Usage
+
+Used in `on_success`, `on_abort`, `on_failed` concourse **jobs** in order to send a log to `Coralogix` with the job details.
+
+```
+on_success:
+  put: pipeline-status
+  params:
+    build_status: "Success"
+    severity: "3"
+on_abort:
+  put: pipeline-status
+  params:
+    build_status: "Abort"
+    severity: "4"
+on_failure:
+  put: pipeline-status
+  params:
+    build_status: "Failed"
+    severity: "5"
+```
 
 ## Maintainers
 [Ari Becker](https://github.com/ari-becker)
