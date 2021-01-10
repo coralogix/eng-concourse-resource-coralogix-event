@@ -34,6 +34,7 @@ fly_init() {
 
 set -euo pipefail
 
+set -x
 input_json="$(cat)"
 
 ## source
@@ -61,12 +62,11 @@ if [[ "$concourse_password" == '' ]]; then
   exit 1
 fi
 
-
 fly_init ${concourse_url} ${concourse_username} ${concourse_password} $BUILD_TEAM_NAME
-set -x
+
 build_info=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME")
 start_time=$(echo "${build_info}" | jq -c '.next_build.start_time')
-build_id=$(echo "${build_info}" | jq -c '.next_build.name')
+build_id=$(echo "${build_info}" | jq -r '.next_build.name')
 timestamp=$(date +%s)
 if [[ -n $start_time ]]; then
   duration=$((timestamp-start_time))
@@ -106,7 +106,7 @@ body=$(jq -c \
             "message": "$message",
             "duration_seconds": $duration,
             "labels": $labels,
-            "additional_metadata": $additional_metadata,
+            "additional_metadata": "$additional_metadata",
             "team": "$BUILD_TEAM_NAME"
           }
         }
