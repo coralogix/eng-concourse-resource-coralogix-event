@@ -61,9 +61,11 @@ if [[ "$concourse_password" == '' ]]; then
   exit 1
 fi
 
-
 fly_init ${concourse_url} ${concourse_username} ${concourse_password} $BUILD_TEAM_NAME
-start_time=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME" | jq -c '.next_build.start_time')
+
+build_info=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME")
+start_time=$(echo "${build_info}" | jq -c '.next_build.start_time')
+build_id=$(echo "${build_info}" | jq -r '.next_build.name')
 timestamp=$(date +%s)
 if [[ -n $start_time ]]; then
   duration=$((timestamp-start_time))
@@ -73,11 +75,16 @@ else
 fi
 
 ## params
-build_status=$(       echo "${input_json}" | jq -r '.params.build_status'                                                                             )
-severity=$(           echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
-message=$(            echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME took $duration\"")
-labels=$(             echo "${input_json}" | jq    '.params.labels? // {}'                                                                            )
+build_status=$(           echo "${input_json}" | jq -r '.params.build_status'                                                                             )
+severity=$(               echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
+message=$(                echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME took $duration\"")
+labels=$(                 echo "${input_json}" | jq    '.params.labels? // {}'                                                                            )
+additional_details_file=$(echo "${input_json}" | jq -r '.params.additional_details_file? // empty'                                   )
 
+additional_details="{}"
+if [[ ! -z "${additional_details_file}" ]]; then
+  additional_details=$(cat "/tmp/build/put/${additional_details_file}")
+fi
 
 body=$(jq -c \
   <<EOF
@@ -94,9 +101,11 @@ body=$(jq -c \
             "build_url": "$concourse_url/builds/$BUILD_ID",
             "build_status": "$build_status",
             "job_name": "$BUILD_JOB_NAME",
+            "build_id": "$build_id",
             "message": "$message",
             "duration_seconds": $duration,
             "labels": $labels,
+            "additional_details": $additional_details,
             "team": "$BUILD_TEAM_NAME"
           }
         }
