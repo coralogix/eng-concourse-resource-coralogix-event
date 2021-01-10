@@ -46,7 +46,7 @@ resources:
 Emit event to Coralogix API containing the pipeline jobs metadata
 
 #### Params
-* `build_status`            : _Required_. The status of the build. (succeed/failed/aborted)
+* `build_status`            : _Required_. The status of the build. (Success / Aborted /Failed)
 * `severity`                : _Optional_. Coralogix severity represented by a number as described in the [Coralogix Rest API](https://coralogix.com/integrations/coralogix-rest-api/)
 * `message`                 : _Optional_. The message we want to send.
 * `labels`                  : _Optional_. Additional labels to add to the log.
