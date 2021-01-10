@@ -89,6 +89,8 @@ jobs:
 ## Maintainers
 [Ari Becker](https://github.com/ari-becker)
 [Oded David](https://github.com/oded-dd)
+[Amit Oren](https://github.com/amit-o)
+[Shauli Solomovich](https://github.com/ShauliSolomovich)
 
 ## License
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) © Coralogix, Inc.
