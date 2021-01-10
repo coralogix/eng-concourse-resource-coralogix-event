@@ -1,7 +1,7 @@
 # Coralogix Event Resource
 [![Docker Repository on Quay](https://quay.io/repository/coralogix/eng-coralogix-event-resource/status "Docker Repository on Quay")](https://quay.io/repository/coralogix/eng-coralogix-event-resource)
 
-A resource type for Concourse CI which emits events to [Coralogix](https://coralogix.com/)
+A resource type for Concourse CI which emits events to [Coralogix](https://coralogix.com/).
 
 ## Source Configuration
 * `private_key`                : _Required_ (`string`). The private key to use when sending logs to Coralogix. private_key is provided by creating new Coralogix account or using the UI Send your logs` tab under settings for an existing account
