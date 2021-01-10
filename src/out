@@ -34,7 +34,6 @@ fly_init() {
 
 set -euo pipefail
 
-set -x
 input_json="$(cat)"
 
 ## source
