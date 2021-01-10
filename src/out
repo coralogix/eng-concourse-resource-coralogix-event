@@ -80,11 +80,11 @@ build_status=$(             echo "${input_json}" | jq -r '.params.build_status' 
 severity=$(                 echo "${input_json}" | jq -r '.params.severity? // "3"'                                                                         )
 message=$(                  echo "${input_json}" | jq -r ".params.message? // \"$build_status during job $BUILD_JOB_NAME in pipeline $BUILD_PIPELINE_NAME took $duration\"")
 labels=$(                   echo "${input_json}" | jq    '.params.labels? // {}'                                                                            )
-additional_metadata_file=$( echo "${input_json}" | jq -r '.params.additional_metadata_file? // empty'                                   )
+additional_details_file=$( echo "${input_json}" | jq -r '.params.additional_details_file? // empty'                                   )
 
-additional_metadata="{}"
-if [[ ! -z "${additional_metadata_file}" ]]; then
-  additional_metadata=$(cat "/tmp/build/put/${additional_metadata_file}")
+additional_details="{}"
+if [[ ! -z "${additional_details_file}" ]]; then
+  additional_details=$(cat "/tmp/build/put/${additional_details_file}")
 fi
 
 body=$(jq -c \
@@ -106,7 +106,7 @@ body=$(jq -c \
             "message": "$message",
             "duration_seconds": $duration,
             "labels": $labels,
-            "additional_metadata": $additional_metadata,
+            "additional_details": $additional_details,
             "team": "$BUILD_TEAM_NAME"
           }
         }
