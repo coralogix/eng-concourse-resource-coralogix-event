@@ -56,7 +56,7 @@ Emit event to Coralogix API containing the pipeline jobs metadata
 
 Used in `on_success`, `on_abort`, `on_failed` concourse **jobs** in order to send a log to `Coralogix` with the job details.
 
-```
+```yaml
 jobs:
   - name: job
     plan:
