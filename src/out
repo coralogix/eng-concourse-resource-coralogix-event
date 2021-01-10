@@ -106,7 +106,7 @@ body=$(jq -c \
             "message": "$message",
             "duration_seconds": $duration,
             "labels": $labels,
-            "additional_metadata": "$additional_metadata",
+            "additional_metadata": $additional_metadata,
             "team": "$BUILD_TEAM_NAME"
           }
         }
