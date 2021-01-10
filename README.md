@@ -57,21 +57,33 @@ Emit event to Coralogix API containing the pipeline jobs metadata
 Used in `on_success`, `on_abort`, `on_failed` concourse **jobs** in order to send a log to `Coralogix` with the job details.
 
 ```
-on_success:
-  put: pipeline-status
-  params:
-    build_status: "Success"
-    severity: "3"
-on_abort:
-  put: pipeline-status
-  params:
-    build_status: "Abort"
-    severity: "4"
-on_failure:
-  put: pipeline-status
-  params:
-    build_status: "Failed"
-    severity: "5"
+jobs:
+  - name: job
+    plan:
+      - task: simple-task
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: { repository: busybox }
+          run:
+            path: echo
+            args: ["Hello, world!"]
+    on_success:
+      put: pipeline-status
+      params:
+        build_status: "Success"
+        severity: "3"
+    on_abort:
+      put: pipeline-status
+      params:
+        build_status: "Abort"
+        severity: "4"
+    on_failure:
+      put: pipeline-status
+      params:
+        build_status: "Failed"
+        severity: "5"
 ```
 
 ## Maintainers
