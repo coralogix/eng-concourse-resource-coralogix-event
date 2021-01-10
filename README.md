@@ -4,13 +4,13 @@
 A resource type for Concourse CI which emits events to Coralogix
 
 ## Source Configuration
-* `concourse_token`            : ____Required_ (`string`). A Concourse token with view permissions.
 * `private_key`                : _Required_ (`string`). The private key to use when sending logs to Coralogix. private_key is provided by creating new Coralogix account or using the UI Send your logs` tab under settings for an existing account
-* `application_name`           : _Required_ (`string`). The application name to use when sending logs to Coralogix.
-* `subsystem_name`             : _Required_ (`string`). The subsystem name to use when sending logs to Coralogix.
+* `concourse_username`         : _Optional_ (`string`). The Concourse username used to login to concourse.
+* `concourse_password`         : _Optional_ (`string`). The Concourse password used to login to concourse.
+* `application_name`           : _Optional_ (`string`). The application name to use when sending logs to Coralogix. defaults to "concourse".
+* `subsystem_name`             : _Optional_ (`string`). The subsystem name to use when sending logs to Coralogix. defaults to the pipeline name ($BUILD_PIPELINE_NAME).
 * `coralogix_host`             : _Optional_ (`string`). Coralogix host url to switch from Europe to Mumbai datacenter, default to Europe.
 * `concourse_url`              : _Optional_ (`string`). The Concourse URL to use. defaults to ATC_EXTERNAL_URL.
-* `computer_name`              : _Optional_ (`string`). The computer name to use when sending logs to Coralogix.
 
 ### Example Configuration
 
@@ -32,8 +32,6 @@ resources:
   type: coralogix-event
   source:
     private_key: ((team-private-key))
-    application_name: controller
-    subsystem_name: concourse
     concourse_username: ((concourse-user-name))
     concourse_password: ((concourse-password))
 ```
@@ -48,7 +46,7 @@ resources:
 Emit event to Coralogix API containing the pipeline jobs metadata
 
 #### Params
-
+* 
 
 ## Maintainers
 [Ari Becker](https://github.com/ari-becker)
