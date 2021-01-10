@@ -63,6 +63,7 @@ fi
 
 
 fly_init ${concourse_url} ${concourse_username} ${concourse_password} $BUILD_TEAM_NAME
+set -x
 build_info=$(fly -t local curl "/api/v1/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME")
 start_time=$(echo "${build_info}" | jq -c '.next_build.start_time')
 build_id=$(echo "${build_info}" | jq -c '.next_build.name')
@@ -101,7 +102,7 @@ body=$(jq -c \
             "build_url": "$concourse_url/builds/$BUILD_ID",
             "build_status": "$build_status",
             "job_name": "$BUILD_JOB_NAME",
-            "build_id": "$build_id"
+            "build_id": "$build_id",
             "message": "$message",
             "duration_seconds": $duration,
             "labels": $labels,
