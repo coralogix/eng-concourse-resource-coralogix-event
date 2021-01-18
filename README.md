@@ -47,6 +47,7 @@ Emit event to Coralogix API containing the pipeline jobs metadata
 * `message`                 : _Optional_ (`string`). The message to send with the logs. Defaults to a generic message stating the build status for the job in a given pipeline.
 * `labels`                  : _Optional_ (`object`). Additional labels to add to the log.
 * `additional_details_file` : _Optional_ (`string`). The path to a JSON file containing additional details to be injected to the log. The file must be a valid JSON.
+* `dry_mode`                : _Optional_ (`bool`). If set to true, does not actually send a request to the Coralogix REST API endpoint. Useful for testing. Defaults to `false`.
 
 ### Example Usage
 

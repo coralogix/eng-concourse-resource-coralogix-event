@@ -1,0 +1,9 @@
+{
+  "source": {
+    "private_key": "dummy_private_key",
+    "dry_mode": true
+  },
+  "params": {
+    "build_status": "dummy_build_status"
+  }
+}

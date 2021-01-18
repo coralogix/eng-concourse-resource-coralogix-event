@@ -11,4 +11,6 @@ LABEL org.label-schema.schema-version="1.0" \
 
 WORKDIR /opt/resource
 
-COPY src/*  /opt/resource/
+COPY src/check  /opt/resource/check
+COPY src/in     /opt/resource/in
+COPY src/out    /opt/resource/out

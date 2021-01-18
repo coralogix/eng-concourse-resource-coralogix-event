@@ -5,11 +5,12 @@ set -euo pipefail
 input_json="$(cat)"
 
 ## source
-private_key=$(        echo "${input_json}" | jq    '.source.private_key'                                               )
-coralogix_host=$(     echo "${input_json}" | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
-application_name=$(   echo "${input_json}" | jq    '.source.application_name? // "concourse"'                          )
-subsystem_name=$(     echo "${input_json}" | jq    ".source.subsystem_name? // \"$BUILD_PIPELINE_NAME\""               )
-concourse_url=$(      echo "${input_json}" | jq -r ".source.concourse_url? // \"$ATC_EXTERNAL_URL\""                   )
+private_key=$(        echo "$input_json" | jq -r '.source.private_key'                                               )
+coralogix_host=$(     echo "$input_json" | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
+application_name=$(   echo "$input_json" | jq -r '.source.application_name? // "concourse"'                          )
+subsystem_name=$(     echo "$input_json" | jq -r ".source.subsystem_name? // \"$BUILD_PIPELINE_NAME\""               )
+concourse_url=$(      echo "$input_json" | jq -r ".source.concourse_url? // \"$ATC_EXTERNAL_URL\""                   )
+dry_mode=$(           echo "$input_json" | jq -r ".source.dry_mode? // false"                                        )
 
 # validation - the following must be defined
 if [[ "$private_key" == '' ]]; then
@@ -34,21 +35,7 @@ if [[ "$additional_details_file" != /dev/null ]]; then
   fi
 fi
 
-body=$(jq -c \
-  --arg privateKey "$private_key" \
-  --arg applicationName "$application_name" \
-  --arg subsystemName "$subsystem_name" \
-  --arg timestamp "${timestamp}000" \
-  --arg severity "$severity" \
-  --arg build_url "$concourse_url/builds/$BUILD_ID" \
-  --arg build_status "$build_status" \
-  --arg job_name "$BUILD_JOB_NAME" \
-  --arg build_id "$BUILD_ID" \
-  --arg message "$message" \
-  --arg team "$BUILD_TEAM_NAME" \
-  --argjson labels "$labels" \
-  --rawfile additional_details "$additional_details_file" \
-  <<EOF
+read -d '' jq_input <<EOF || true
 {
   "privateKey": \$privateKey,
   "applicationName": \$applicationName,
@@ -72,32 +59,52 @@ body=$(jq -c \
     ]
 }
 EOF
+
+body=$(jq -cn \
+  --arg     privateKey "$private_key" \
+  --arg     applicationName "$application_name" \
+  --arg     subsystemName "$subsystem_name" \
+  --arg     timestamp "${timestamp}000" \
+  --arg     severity "$severity" \
+  --arg     build_url "$concourse_url/builds/$BUILD_ID" \
+  --arg     build_status "$build_status" \
+  --arg     job_name "$BUILD_JOB_NAME" \
+  --argjson build_id "$BUILD_ID" \
+  --arg     message "$message" \
+  --arg     team "$BUILD_TEAM_NAME" \
+  --argjson labels "$labels" \
+  --rawfile additional_details "$additional_details_file" \
+  "$jq_input"
 )
 
-## retry mechanism
-## currently hardcoded to 5
+if [[ "$dry_mode" == 'true' ]]; then
+  echo >&2 '[DEBUG] Dry mode enabled - not sending to the Coralogix API.'
+else
+  ## retry mechanism
+  ## currently hardcoded to 5
 
-http_status_code=
-num_retries=5
-for i in $(seq 1 $num_retries); do
-  http_status_code=$(curl \
-    -XPOST \
-    --header 'Content-Type: application/json' \
-    --data "$body" \
-    --silent \
-    --output /dev/null \
-    --write-out "%{http_code}" \
-    "$coralogix_host")
+  http_status_code=
+  num_retries=5
+  for i in $(seq 1 $num_retries); do
+    http_status_code=$(curl \
+      -XPOST \
+      --header 'Content-Type: application/json' \
+      --data "$body" \
+      --silent \
+      --output /dev/null \
+      --write-out "%{http_code}" \
+      "$coralogix_host")
 
-  if [[ $http_status_code -eq 200 ]]; then
-    break
-  elif [[ $i -ne $num_retries ]]; then
-    echo >&2 "[WARN][HTTP status code: $http_status_code] Did not receive a 200 HTTP status code. Trying again..."
+    if [[ $http_status_code -eq 200 ]]; then
+      break
+    elif [[ $i -ne $num_retries ]]; then
+      echo >&2 "[WARN][HTTP status code: $http_status_code] Did not receive a 200 HTTP status code. Trying again..."
+    fi
+  done
+
+  if [[ $http_status_code -ne 200 ]]; then
+    echo >&2 "[ERROR][HTTP status code: $http_status_code] The Coralogix API declined the logs!"
+    exit 1
   fi
-done
-
-if [[ $http_status_code -ne 200 ]]; then
-  echo >&2 "[ERROR][HTTP status code: $http_status_code] The Coralogix API declined the logs!"
-  exit 1
 fi
 echo '{"version":{"hash":"none"},"metadata":[]}'
