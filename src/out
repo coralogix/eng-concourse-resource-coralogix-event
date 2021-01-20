@@ -7,7 +7,7 @@ input_json="$(cat)"
 ## source
 private_key=$(        echo "$input_json" | jq -r '.source.private_key'                                               )
 coralogix_host=$(     echo "$input_json" | jq -r '.source.coralogix_host? // "https://api.coralogix.com/api/v1/logs"')
-application_name=$(   echo "$input_json" | jq -r '.source.application_name? // "concourse"'                          )
+application_name=$(   echo "$input_json" | jq -r '.source.application_name? // "concourse-build-events"'                          )
 subsystem_name=$(     echo "$input_json" | jq -r ".source.subsystem_name? // \"$BUILD_PIPELINE_NAME\""               )
 concourse_url=$(      echo "$input_json" | jq -r ".source.concourse_url? // \"$ATC_EXTERNAL_URL\""                   )
 dry_mode=$(           echo "$input_json" | jq -r ".source.dry_mode? // false"                                        )

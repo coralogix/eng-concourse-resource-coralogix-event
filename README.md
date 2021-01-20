@@ -5,7 +5,7 @@ A resource type for Concourse CI which emits events to [Coralogix](https://coral
 
 ## Source Configuration
 * `private_key`                : _Required_ (`string`). The Coralogix Private Key to use when sending logs to Coralogix. You can find it under your account's `Settings -> API Access -> Logs API Key`
-* `application_name`           : _Optional_ (`string`). The application name to use when sending logs to Coralogix. Defaults to "concourse".
+* `application_name`           : _Optional_ (`string`). The application name to use when sending logs to Coralogix. Defaults to "concourse-build-events".
 * `subsystem_name`             : _Optional_ (`string`). The subsystem name to use when sending logs to Coralogix. Defaults to the pipeline name (`$BUILD_PIPELINE_NAME`).
 * `coralogix_host`             : _Optional_ (`string`). The Coralogix API endpoint to send the event logs to. Defaults to `https://api.coralogix.com/api/v1/logs`.
 * `concourse_url`              : _Optional_ (`string`). The Concourse URL to use. defaults to `ATC_EXTERNAL_URL`.
@@ -20,7 +20,7 @@ resource_types:
   type: registry-image
   source:
     repository: quay.io/coralogix/eng-coralogix-event-resource
-    tag: v0.1.1
+    tag: v0.1.2
 ```
 
 Resource configuration
@@ -60,7 +60,7 @@ resource_types:
   type: registry-image
   source:
     repository: quay.io/coralogix/concourse-resource-coralogix-event
-    tag: v0.1.1
+    tag: v0.1.2
 resources:
 - name: pipeline-status
   type: coralogix-event
