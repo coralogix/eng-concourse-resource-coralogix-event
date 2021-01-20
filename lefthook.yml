@@ -1,0 +1,4 @@
+pre-commit:
+  commands:
+    test:
+      run: ./test/out.sh ./src ./test
