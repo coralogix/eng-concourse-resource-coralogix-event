@@ -19,7 +19,7 @@ resource_types:
 - name: coralogix-event
   type: registry-image
   source:
-    repository: quay.io/coralogix/concourse-resource-coralogix-event
+    repository: quay.io/coralogix/eng-coralogix-event-resource
     tag: v0.1.1
 ```
 
