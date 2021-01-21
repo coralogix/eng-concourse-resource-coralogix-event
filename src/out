@@ -40,20 +40,19 @@ if [[ "$additional_details_file" != /dev/null ]]; then
     if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
       sleep $sleep_amount
       echo >&2 -n '.'
-      ((retry_count+=1))
     else
       break
     fi
+    ((retry_count+=1))
   done
   echo >&2 '' # newline, after periods added to prior line
 
-  if [[ $retry_count -ge $max_retries ]]; then
-    if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
-      echo >&2 "[ERROR][additonal_details_file: ${additional_details_file}] The additional_details_file was not found, or not readable!"
-      exit 1
-    fi
+  if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
+    echo >&2 "[ERROR][additonal_details_file: ${additional_details_file}] The additional_details_file was not found, or not readable!"
+    exit 1
   fi
 fi
+
 
 read -d '' jq_input <<EOF || true
 {
