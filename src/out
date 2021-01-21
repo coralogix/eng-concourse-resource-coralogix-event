@@ -41,6 +41,8 @@ if [[ "$additional_details_file" != /dev/null ]]; then
       sleep $sleep_amount
       echo >&2 -n '.'
       ((retry_count+=1))
+    else
+      break
     fi
   done
   echo >&2 '' # newline, after periods added to prior line
