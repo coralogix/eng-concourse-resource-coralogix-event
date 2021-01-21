@@ -35,7 +35,7 @@ if [[ "$additional_details_file" != /dev/null ]]; then
 
   retry_count=1
   max_retries=100
-  sleep_amount='0.1'
+  sleep_amount=1
   while [[ $retry_count -le $max_retries ]]; do
     if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
       sleep $sleep_amount
