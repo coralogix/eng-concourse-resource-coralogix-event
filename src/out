@@ -28,10 +28,24 @@ message=$(                echo "${input_json}" | jq -r --arg default "The job $B
 labels=$(                 echo "${input_json}" | jq -c '.params.labels? // {}'                                                                 )
 additional_details_file=$(echo "${input_json}" | jq -r '.params.additional_details_file? // "/dev/null"'                                       )
 
-additional_details_file=$(realpath "$additional_details_file")
-
 if [[ "$additional_details_file" != /dev/null ]]; then
   if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
+    echo >&2 -n "[WARN][additonal_details_file: ${additional_details_file}] additional_details_file was not found. Waiting for it to appear ..."
+  fi
+
+  while [[ $retry_count -lt $max_retries ]]; do
+    retry_count=1
+    max_retries=100
+    sleep_amount='0.1'
+    if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
+      sleep $sleep_amount
+      echo >&2 -n '.'
+      ((retry_count+=1))
+    fi
+  done
+  echo >&2 '' # newline, after periods added to prior line
+
+  if [[ $retry_count -ge $max_retries ]]; then
     echo >&2 "[ERROR][additonal_details_file: ${additional_details_file}] The additional_details_file was not found, or not readable!"
     exit 1
   fi
