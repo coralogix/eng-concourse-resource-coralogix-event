@@ -33,10 +33,10 @@ if [[ "$additional_details_file" != /dev/null ]]; then
     echo >&2 -n "[WARN][additonal_details_file: ${additional_details_file}] additional_details_file was not found. Waiting for it to appear ..."
   fi
 
+  retry_count=1
+  max_retries=100
+  sleep_amount='0.1'
   while [[ $retry_count -lt $max_retries ]]; do
-    retry_count=1
-    max_retries=100
-    sleep_amount='0.1'
     if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
       sleep $sleep_amount
       echo >&2 -n '.'
