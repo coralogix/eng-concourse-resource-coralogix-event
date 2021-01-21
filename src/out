@@ -36,7 +36,7 @@ if [[ "$additional_details_file" != /dev/null ]]; then
   retry_count=1
   max_retries=100
   sleep_amount='0.1'
-  while [[ $retry_count -lt $max_retries ]]; do
+  while [[ $retry_count -le $max_retries ]]; do
     if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
       sleep $sleep_amount
       echo >&2 -n '.'
@@ -46,8 +46,10 @@ if [[ "$additional_details_file" != /dev/null ]]; then
   echo >&2 '' # newline, after periods added to prior line
 
   if [[ $retry_count -ge $max_retries ]]; then
-    echo >&2 "[ERROR][additonal_details_file: ${additional_details_file}] The additional_details_file was not found, or not readable!"
-    exit 1
+    if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
+      echo >&2 "[ERROR][additonal_details_file: ${additional_details_file}] The additional_details_file was not found, or not readable!"
+      exit 1
+    fi
   fi
 fi
 
