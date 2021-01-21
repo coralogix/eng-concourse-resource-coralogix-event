@@ -29,6 +29,8 @@ labels=$(                 echo "${input_json}" | jq -c '.params.labels? // {}'  
 additional_details_file=$(echo "${input_json}" | jq -r '.params.additional_details_file? // "/dev/null"'                                       )
 
 if [[ "$additional_details_file" != /dev/null ]]; then
+  additional_details_file="/tmp/build/put/${additional_details_file}" # I hate this but it's late before a weekend and Concourse is lying that it doesn't exist
+
   if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
     echo >&2 -n "[WARN][additonal_details_file: ${additional_details_file}] additional_details_file was not found. Waiting for it to appear ..."
   fi

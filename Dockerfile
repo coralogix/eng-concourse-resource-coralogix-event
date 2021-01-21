@@ -7,7 +7,7 @@ LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.description="A Concourse resource for emiting events to Coralogix API." \
       org.label-schema.vcs-url="https://github.com/coralogix/eng-concourse-resource-coralogix-event" \
       org.label-schema.vendor="Coralogix, Inc." \
-      org.label-schema.version="v0.1.5"
+      org.label-schema.version="v0.1.6"
 
 WORKDIR /opt/resource
 

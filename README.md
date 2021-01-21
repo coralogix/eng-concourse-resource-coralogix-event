@@ -20,7 +20,7 @@ resource_types:
   type: registry-image
   source:
     repository: quay.io/coralogix/eng-coralogix-event-resource
-    tag: v0.1.5
+    tag: v0.1.6
 ```
 
 Resource configuration
@@ -60,7 +60,7 @@ resource_types:
   type: registry-image
   source:
     repository: quay.io/coralogix/concourse-resource-coralogix-event
-    tag: v0.1.5
+    tag: v0.1.6
 resources:
 - name: pipeline-status
   type: coralogix-event
