@@ -20,7 +20,7 @@ resource_types:
   type: registry-image
   source:
     repository: quay.io/coralogix/eng-coralogix-event-resource
-    tag: v0.1.3
+    tag: v0.1.4
 ```
 
 Resource configuration
@@ -46,7 +46,7 @@ Emit event to Coralogix API containing the pipeline jobs metadata
 * `severity`                : _Optional_ (`string`). Coralogix severity represented by a stringified number as described in the [Coralogix REST API](https://coralogix.com/integrations/coralogix-rest-api/).
 * `message`                 : _Optional_ (`string`). The message to send with the logs. Defaults to a generic message stating the build status for the job in a given pipeline.
 * `labels`                  : _Optional_ (`object`). Additional labels to add to the log.
-* `additional_details_file` : _Optional_ (`string`). The path to a JSON file containing additional details to be injected to the log. The file must be a valid JSON.
+* `additional_details_file` : _Optional_ (`string`). The path to a JSON file containing additional details to be injected to the log. The file must be a valid JSON object.
 * `dry_mode`                : _Optional_ (`bool`). If set to true, does not actually send a request to the Coralogix REST API endpoint. Useful for testing. Defaults to `false`.
 
 ### Example Usage
@@ -60,7 +60,7 @@ resource_types:
   type: registry-image
   source:
     repository: quay.io/coralogix/concourse-resource-coralogix-event
-    tag: v0.1.3
+    tag: v0.1.4
 resources:
 - name: pipeline-status
   type: coralogix-event

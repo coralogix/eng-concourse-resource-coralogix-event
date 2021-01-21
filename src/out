@@ -28,12 +28,30 @@ message=$(                echo "${input_json}" | jq -r --arg default "The job $B
 labels=$(                 echo "${input_json}" | jq -c '.params.labels? // {}'                                                                 )
 additional_details_file=$(echo "${input_json}" | jq -r '.params.additional_details_file? // "/dev/null"'                                       )
 
-additional_details_file=$(realpath "$additional_details_file")
-
 if [[ "$additional_details_file" != /dev/null ]]; then
+  if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
+    echo >&2 -n "[WARN][additonal_details_file: ${additional_details_file}] additional_details_file was not found. Waiting for it to appear ..."
+  fi
+
+  retry_count=1
+  max_retries=100
+  sleep_amount='0.1'
+  while [[ $retry_count -le $max_retries ]]; do
+    if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
+      sleep $sleep_amount
+      echo >&2 -n '.'
+    else
+      break
+    fi
+    ((retry_count+=1))
+  done
+  echo >&2 '' # newline, after periods added to prior line
+
   if [[ ! -f "$additional_details_file" ]] || [[ ! -r "$additional_details_file" ]]; then
     echo >&2 "[ERROR][additonal_details_file: ${additional_details_file}] The additional_details_file was not found, or not readable!"
     exit 1
+  else
+    echo >&2 -n "[INFO][additonal_details_file: ${additional_details_file}] Found additional_details_file."
   fi
 fi
 
@@ -57,7 +75,7 @@ read -d '' jq_input <<EOF || true
             "build_team_name": \$build_team_name,
             "message": \$message,
             "labels": \$labels,
-            "additional_details": \$additional_details,
+            "additional_details": ( \$additional_details[0]? // {} )
           }
         }
     ]
@@ -65,21 +83,21 @@ read -d '' jq_input <<EOF || true
 EOF
 
 body=$(jq -cn \
-  --arg     privateKey "$private_key" \
-  --arg     applicationName "$application_name" \
-  --arg     subsystemName "$subsystem_name" \
-  --arg     timestamp "${timestamp}000" \
-  --arg     severity "$severity" \
-  --arg     build_url "$concourse_url/builds/$BUILD_ID" \
-  --arg     build_status "$build_status" \
-  --arg     build_id "$BUILD_ID" \
-  --argjson build_name "$BUILD_NAME" \
-  --arg     build_job_name "$BUILD_JOB_NAME" \
-  --arg     build_pipeline_name "$BUILD_PIPELINE_NAME" \
-  --arg     build_team_name "$BUILD_TEAM_NAME" \
-  --arg     message "$message" \
-  --argjson labels "$labels" \
-  --rawfile additional_details "$additional_details_file" \
+  --arg       privateKey "$private_key" \
+  --arg       applicationName "$application_name" \
+  --arg       subsystemName "$subsystem_name" \
+  --arg       timestamp "${timestamp}000" \
+  --arg       severity "$severity" \
+  --arg       build_url "$concourse_url/builds/$BUILD_ID" \
+  --arg       build_status "$build_status" \
+  --arg       build_id "$BUILD_ID" \
+  --argjson   build_name "$BUILD_NAME" \
+  --arg       build_job_name "$BUILD_JOB_NAME" \
+  --arg       build_pipeline_name "$BUILD_PIPELINE_NAME" \
+  --arg       build_team_name "$BUILD_TEAM_NAME" \
+  --arg       message "$message" \
+  --argjson   labels "$labels" \
+  --slurpfile additional_details "$additional_details_file" \
   "$jq_input"
 )
 
