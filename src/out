@@ -93,7 +93,7 @@ body=$(jq -cn \
   --arg       timestamp "${timestamp}000" \
   --arg       severity "$severity" \
   --arg       build_url "$concourse_url/builds/$BUILD_ID" \
-  --arg       build_url_html "<a href=\"$concourse_url/builds/$BUILD_ID\">build_url</a>" \
+  --arg       build_url_html "<a href=\"$concourse_url/builds/$BUILD_ID\">Link to Build</a>" \
   --arg       build_status "$build_status" \
   --arg       build_id "$BUILD_ID" \
   --argjson   build_name "$BUILD_NAME" \
